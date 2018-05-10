@@ -36,7 +36,7 @@ var ArtistManager = /** @class */ (function () {
         this.hidingTriggerTarget = albumListTarget + ', ' + listTarget;
         // Initialisation de l'écoute des évènements
         this.listenTyping();
-        this.listenHideEvents();
+        this.listenToggleEvents();
     }
     /**
      * Initialisation des des données textuelles de l'app relatives à la partie "artist"
@@ -126,7 +126,7 @@ var ArtistManager = /** @class */ (function () {
      * La cache lorsqu'elle est cliquée ou au clic sur la liste des albums
      *
      */
-    ArtistManager.prototype.listenHideEvents = function () {
+    ArtistManager.prototype.listenToggleEvents = function () {
         var _this = this;
         $(this.searchboxTarget).on('click', function () {
             $(_this.listTarget).fadeIn(200);

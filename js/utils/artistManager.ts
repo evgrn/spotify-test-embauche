@@ -52,7 +52,7 @@ class ArtistManager{
 
         // Initialisation de l'écoute des évènements
         this.listenTyping();
-        this.listenHideEvents();
+        this.listenToggleEvents();
 
     }
 
@@ -169,7 +169,7 @@ class ArtistManager{
      * La cache lorsqu'elle est cliquée ou au clic sur la liste des albums
      *
      */
-    protected listenHideEvents() : void {
+    protected listenToggleEvents() : void {
         $(this.searchboxTarget).on('click', () => {
             $(this.listTarget).fadeIn(200);
         });
