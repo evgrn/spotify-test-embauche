@@ -119,7 +119,7 @@ var ArtistManager = /** @class */ (function () {
      * @returns {string}
      */
     ArtistManager.prototype.template = function (name, id, imgUrl) {
-        return "\n            <div class=\"artist col-12\" id=\"" + id + "\">\n                <div class=\"row\">\n                    <div class=\"col-1 img-container\">\n                        <img src=\"" + imgUrl + "\" alt=\"" + name + "\" />\n                   </div>\n                    <div class=\"col-11\">\n                        <p class=\"artist-name\">" + name + "</p>\n                    </div>\n                </div>\n                \n            </div>\n        ";
+        return "\n            <div class=\"artist col-12\" id=\"" + id + "\">\n                <div class=\"row\">\n                    <div class=\"col-sm-1 col-5 img-container\">\n                        <img src=\"" + imgUrl + "\" alt=\"" + name + "\" />\n                   </div>\n                    <div class=\"col-sm-11 col-7\">\n                        <p class=\"artist-name\">" + name + "</p>\n                    </div>\n                </div>\n                \n            </div>\n        ";
     };
     /**
      * Affiche la liste des suggestions d'artistes au clic sur la barre de recherche,

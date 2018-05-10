@@ -151,10 +151,10 @@ class ArtistManager{
         return `
             <div class="artist col-12" id="${id}">
                 <div class="row">
-                    <div class="col-1 img-container">
+                    <div class="col-sm-1 col-5 img-container">
                         <img src="${imgUrl}" alt="${name}" />
                    </div>
-                    <div class="col-11">
+                    <div class="col-sm-11 col-7">
                         <p class="artist-name">${name}</p>
                     </div>
                 </div>

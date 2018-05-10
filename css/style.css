@@ -45,7 +45,7 @@ input{
 /* Résultats */
 
 #artist-list{
-    max-height: 30vh;
+    max-height: 65vh;
     overflow-y: scroll;
     display: none;
 }
@@ -220,4 +220,11 @@ input{
     -webkit-box-shadow: 0px 3px 3px dimgrey;
     box-shadow: 0px 3px 3px dimgrey;
     z-index: 1050;
+}
+
+/*### MEDIA QUERIES ###*/
+@media only screen and (min-width: 768px) and (orientation : landscape){
+    #artist-list{
+        max-height: 35vh;
+    }
 }
