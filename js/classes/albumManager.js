@@ -1,8 +1,19 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 /**
  * Classe gérant l'affichage des albums
  */
-var AlbumManager = /** @class */ (function () {
+var AlbumManager = /** @class */ (function (_super) {
+    __extends(AlbumManager, _super);
     /**
      * Récupère les données textuelles de l'app relatives à la partie "albums", stocke une instance d'AlertManager et de AuthorizationManager entrées en paramètres, initialise les sélecteurs des éléments du dom correspondant au conteneur de la liste des artistes,
      * à celle des albums et à la barre permettant d'afficher les albums suivants.
@@ -16,9 +27,11 @@ var AlbumManager = /** @class */ (function () {
      * @param {string} ajaxLoaderTarget
      */
     function AlbumManager(alertManager, authorizationManager, artistListTarget, listTarget, nextSliceBar, ajaxLoaderTarget) {
-        this.slice = 0;
-        this.unableToLoadConfigMessage = 'Impossible de charger le fichier de configuration';
-        var that = this;
+        var _this = _super.call(this, authorizationManager) || this;
+        _this.noMoreAlbums = false;
+        _this.slice = 0;
+        _this.unableToLoadConfigMessage = 'Impossible de charger le fichier de configuration';
+        var that = _this;
         // Récupération des données textuelles de l'app relatives à la partie "albums"
         $.ajax({
             dataType: "json",
@@ -31,16 +44,17 @@ var AlbumManager = /** @class */ (function () {
             }
         });
         // Initialisation des sélecteurs
-        this.alertManager = alertManager;
-        this.authorizationManager = authorizationManager;
-        this.artistListTarget = artistListTarget;
-        this.listTarget = listTarget;
-        this.nextSliceBar = nextSliceBar;
-        this.nextSliceBarText = nextSliceBar + ' p';
-        this.ajaxLoaderTarget = ajaxLoaderTarget;
+        _this.alertManager = alertManager;
+        _this.authorizationManager = authorizationManager;
+        _this.artistListTarget = artistListTarget;
+        _this.listTarget = listTarget;
+        _this.nextSliceBar = nextSliceBar;
+        _this.nextSliceBarText = nextSliceBar + ' p';
+        _this.ajaxLoaderTarget = ajaxLoaderTarget;
         // Initialisation de l'écoute des évènements
-        this.listenTrigger();
-        this.listenNext();
+        _this.listenTrigger();
+        _this.listenNext();
+        return _this;
     }
     /**
      * Initialisation des des données textuelles de l'app relatives à la partie "albums"
@@ -67,46 +81,28 @@ var AlbumManager = /** @class */ (function () {
     };
     /**
      *
-     * Récupère les 18 albums relatifs à l'artiste dont l'ID est stocké dans la propriété "artist" de l'objet courant
+     * Si la propriété "noMoreAlbums" vaut false, écupère les 18 albums relatifs à l'artiste dont l'ID est stocké dans la propriété "artist" de l'objet courant
      * en commençant par l'album correspondant dont l'index correspond à la propriété "slice" de l'objet courant.
      * En cas d'erreur, s'il s'agit d'une erreur 401, affiche le message expliquant que l'autorisation a expiré et redirige vers la page d'autorisation,
      * sinon affiche un message d'erreur.
      *
      */
-    AlbumManager.prototype.loadItems = function () {
+    AlbumManager.prototype.LoadAlbums = function () {
         var _this = this;
-        // Apparition du loader AJAX
-        this.ajaxLoaderVisibility(true);
-        var that = this;
-        $.ajax({
-            url: "https://api.spotify.com/v1/artists/" + this.artist + "/albums",
-            headers: {
-                'Authorization': 'Bearer ' + this.authorizationManager.getToken()
-            },
-            data: {
-                q: this.artist,
-                type: "track",
-                offset: that.slice,
-                limit: 18
-            },
-            success: function (response) {
-                // Affichage du résultat sur la page
-                _this.handleLoading(response);
-                // Disparition du loader AJAX
-                that.ajaxLoaderVisibility(false);
-            },
-            error: function (data) {
-                // Disparition du loader AJAX
-                that.ajaxLoaderVisibility(false);
-                // S'il s'agit d'une erreur 401, affichage du message expliquant que l'autorisation a expiré et redirection vers la page d'autorisation
-                if (data.status === 401) {
-                    that.authorizationManager.redirectToAuthorization();
-                    return;
-                }
-                // Sinon affichage d'un message d'erreur
-                that.alertManager.displayError(that.loadingProblemMessage);
-            }
-        });
+        // S'il reste des albums à charger
+        if (this.noMoreAlbums === false) {
+            // Apparition du loader AJAX
+            this.ajaxLoaderVisibility(true);
+            this.loadItems({
+                "requestUrl": "https://api.spotify.com/v1/artists/" + this.artist + "/albums",
+                "query": this.artist,
+                "type": "album",
+                "offset": this.slice,
+                "limit": 18,
+                "successCallback": function (data) { return _this.handleLoadingSuccess(data); },
+                "errorCallback": function (error) { return _this.handleLoadingError(error); }
+            });
+        }
     };
     /**
      * Si la propriété "items" de l'objet entré en paramètre est nulle, affiche les messages correspondant à une absence de résultat,
@@ -115,10 +111,12 @@ var AlbumManager = /** @class */ (function () {
      *
      * @param response
      */
-    AlbumManager.prototype.handleLoading = function (response) {
+    AlbumManager.prototype.handleLoadingSuccess = function (response) {
         var _this = this;
         // Si la requête ne retourne aucun album
         if ($(response.items).length < 1) {
+            // Disparition du loader Ajax
+            this.ajaxLoaderVisibility(false);
             this.notFound();
             return;
         }
@@ -133,12 +131,15 @@ var AlbumManager = /** @class */ (function () {
         $('body, html').animate({ scrollTop: $('body').height() }, 500);
         // Incrémentation du compteur de paginations
         this.slice += 18;
+        // Disparition du loader Ajax
+        this.ajaxLoaderVisibility(false);
     };
     /**
-     * S'il s'agit de la première pargination d'albums, affiche un message prévenant qu'aucun album correspondant n'a été trouvé à la place de la liste d'albums,
+     * Définit la propriété "noMoreAlbums" par true. S'il s'agit de la première pargination d'albums, affiche un message prévenant qu'aucun album correspondant n'a été trouvé à la place de la liste d'albums,
      * affiche "fin des résultats" dans la barre de pagination sinon.
      */
     AlbumManager.prototype.notFound = function () {
+        this.noMoreAlbums = true;
         // S'il s'agit de la première page
         if (this.slice == 0) {
             $('#album-list').html(this.noResultMessage);
@@ -149,28 +150,46 @@ var AlbumManager = /** @class */ (function () {
         }
     };
     /**
+     * Cache le loader AJAX, si l'erreur en paramètre correspond à un code 401, affiche du message expliquant que l'autorisation a expiré et redirige vers la page d'autorisation.
+     * Affiche un message d'erreur sinon.
+     *
+     * @param {object} error
+     */
+    AlbumManager.prototype.handleLoadingError = function (error) {
+        // Disparition du loader AJAX
+        this.ajaxLoaderVisibility(false);
+        // S'il s'agit d'une erreur 401, affichage du message expliquant que l'autorisation a expiré et redirection vers la page d'autorisation
+        if (error.status === 401) {
+            this.authorizationManager.redirectToAuthorization();
+            return;
+        }
+        // Sinon affichage d'un message d'erreur
+        this.alertManager.displayError(this.loadingProblemMessage);
+    };
+    /**
      * Affiche la pagination d'albums suivante au clic sur la barre de pagination.
      */
     AlbumManager.prototype.listenNext = function () {
         var _this = this;
         var that = this;
         $('#next-slice-container').on('click', function () {
-            _this.loadItems();
+            _this.LoadAlbums();
         });
     };
     /**
-     * Au clic sur un bloc "artist", vide le container des albums, réinitialise la propriété "slice" de l'objet courant
+     * Au clic sur un bloc "artist", vide le container des albums, définit la propriété "noMoreAlbums" par false, réinitialise la propriété "slice" de l'objet courant
      * stocke la valeur de son ID dans la propriété "artist" de l'objet courant,
      * affiche la barre de pagination et affiche la pagination d'albums correspondante.
      */
     AlbumManager.prototype.listenTrigger = function () {
         var that = this;
         $(this.artistListTarget).on("click", ".artist", function () {
+            that.noMoreAlbums = false;
             $(that.listTarget).empty();
             that.slice = 0;
             that.artist = $(this).attr('id');
             that.showNextSliceBar();
-            that.loadItems();
+            that.LoadAlbums();
         });
     };
     /**
@@ -193,4 +212,4 @@ var AlbumManager = /** @class */ (function () {
         $(this.nextSliceBar).fadeIn(500);
     };
     return AlbumManager;
-}());
+}(APICallManager));

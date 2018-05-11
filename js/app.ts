@@ -1,3 +1,4 @@
+// Instanciation des classes de l'app
 let alertManager = new AlertManager('#global-overlay', '#alert-message');
 let authorizationManager = new AuthorizationManager(alertManager, false);
 let albums = new AlbumManager(alertManager, authorizationManager,"#artist-list", "#album-list", "#next-slice-container", "#ajax-loader");

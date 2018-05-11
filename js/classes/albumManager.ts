@@ -1,8 +1,9 @@
 /**
  * Classe gérant l'affichage des albums
  */
-class AlbumManager{
+class AlbumManager extends APICallManager{
 
+    protected noMoreAlbums : boolean = false;
     protected slice : number = 0;
     protected authorizationManager : AuthorizationManager;
     protected listTarget : string;
@@ -33,6 +34,8 @@ class AlbumManager{
      * @param {string} ajaxLoaderTarget
      */
     constructor(alertManager : AlertManager, authorizationManager : AuthorizationManager, artistListTarget : string, listTarget : string, nextSliceBar : string, ajaxLoaderTarget : string) {
+
+        super(authorizationManager);
 
         const that = this;
 
@@ -100,49 +103,29 @@ class AlbumManager{
 
     /**
      *
-     * Récupère les 18 albums relatifs à l'artiste dont l'ID est stocké dans la propriété "artist" de l'objet courant
+     * Si la propriété "noMoreAlbums" vaut false, écupère les 18 albums relatifs à l'artiste dont l'ID est stocké dans la propriété "artist" de l'objet courant
      * en commençant par l'album correspondant dont l'index correspond à la propriété "slice" de l'objet courant.
      * En cas d'erreur, s'il s'agit d'une erreur 401, affiche le message expliquant que l'autorisation a expiré et redirige vers la page d'autorisation,
      * sinon affiche un message d'erreur.
      *
      */
-    protected loadItems() : void {
-        // Apparition du loader AJAX
-        this.ajaxLoaderVisibility(true);
+    protected LoadAlbums() : void {
+        // S'il reste des albums à charger
+        if(this.noMoreAlbums === false){
+            // Apparition du loader AJAX
+            this.ajaxLoaderVisibility(true);
+            this.loadItems({
+                "requestUrl" : `https://api.spotify.com/v1/artists/${this.artist}/albums`,
+                "query" : this.artist,
+                "type" : "album",
+                "offset" : this.slice,
+                "limit" : 18,
+                "successCallback" : (data) => this.handleLoadingSuccess(data),
+                "errorCallback" : (error) => this.handleLoadingError(error)
+            });
+        }
 
-        const that = this;
-        $.ajax({
-            url: `https://api.spotify.com/v1/artists/${this.artist}/albums`,
-            headers: {
-                'Authorization': 'Bearer ' + this.authorizationManager.getToken()
-            },
-            data: {
-                q: this.artist,
-                type: "track",
-                offset: that.slice,
-                limit: 18
-            },
-            success: (response : object)=> {
-                // Affichage du résultat sur la page
-               this.handleLoading(response);
-                // Disparition du loader AJAX
-                that.ajaxLoaderVisibility(false);
 
-            },
-            error: function(data){
-                // Disparition du loader AJAX
-                that.ajaxLoaderVisibility(false);
-
-                // S'il s'agit d'une erreur 401, affichage du message expliquant que l'autorisation a expiré et redirection vers la page d'autorisation
-                if(data.status === 401){
-                    that.authorizationManager.redirectToAuthorization();
-                    return;
-                }
-                // Sinon affichage d'un message d'erreur
-                that.alertManager.displayError(that.loadingProblemMessage);
-            }
-
-        });
     }
 
     /**
@@ -152,17 +135,17 @@ class AlbumManager{
      *
      * @param response
      */
-    protected handleLoading(response : object) : void {
+    protected handleLoadingSuccess(response : object) : void {
 
         // Si la requête ne retourne aucun album
         if($(response.items).length < 1){
+            // Disparition du loader Ajax
+            this.ajaxLoaderVisibility(false);
             this.notFound();
             return;
         }
 
         // Génération les éléments "album"
-
-
         const that = this;
 
         $.map(response.items, (album : object) =>{
@@ -178,13 +161,18 @@ class AlbumManager{
 
         // Incrémentation du compteur de paginations
         this.slice+=18;
+
+        // Disparition du loader Ajax
+        this.ajaxLoaderVisibility(false);
     }
 
     /**
-     * S'il s'agit de la première pargination d'albums, affiche un message prévenant qu'aucun album correspondant n'a été trouvé à la place de la liste d'albums,
+     * Définit la propriété "noMoreAlbums" par true. S'il s'agit de la première pargination d'albums, affiche un message prévenant qu'aucun album correspondant n'a été trouvé à la place de la liste d'albums,
      * affiche "fin des résultats" dans la barre de pagination sinon.
      */
     protected notFound() : void {
+        this.noMoreAlbums = true;
+
         // S'il s'agit de la première page
         if(this.slice == 0){
             $('#album-list').html(this.noResultMessage);
@@ -197,28 +185,49 @@ class AlbumManager{
     }
 
     /**
+     * Cache le loader AJAX, si l'erreur en paramètre correspond à un code 401, affiche du message expliquant que l'autorisation a expiré et redirige vers la page d'autorisation.
+     * Affiche un message d'erreur sinon.
+     *
+     * @param {object} error
+     */
+    handleLoadingError(error : object) : void {
+        // Disparition du loader AJAX
+        this.ajaxLoaderVisibility(false);
+
+        // S'il s'agit d'une erreur 401, affichage du message expliquant que l'autorisation a expiré et redirection vers la page d'autorisation
+        if(error.status === 401){
+            this.authorizationManager.redirectToAuthorization();
+            return;
+        }
+        // Sinon affichage d'un message d'erreur
+        this.alertManager.displayError(this.loadingProblemMessage);
+    }
+
+    /**
      * Affiche la pagination d'albums suivante au clic sur la barre de pagination.
      */
     protected listenNext() : void {
         let that = this;
         $('#next-slice-container').on('click', ()=>{
-            this.loadItems();
+            this.LoadAlbums();
         })
     }
 
     /**
-     * Au clic sur un bloc "artist", vide le container des albums, réinitialise la propriété "slice" de l'objet courant
+     * Au clic sur un bloc "artist", vide le container des albums, définit la propriété "noMoreAlbums" par false, réinitialise la propriété "slice" de l'objet courant
      * stocke la valeur de son ID dans la propriété "artist" de l'objet courant,
      * affiche la barre de pagination et affiche la pagination d'albums correspondante.
      */
     protected listenTrigger() : void {
+
         const that = this;
         $(this.artistListTarget).on("click", ".artist", function() {
+            that.noMoreAlbums = false;
             $(that.listTarget).empty();
             that.slice = 0;
             that.artist = $(this).attr('id');
             that.showNextSliceBar();
-            that.loadItems();
+            that.LoadAlbums();
         });
     }
 

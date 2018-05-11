@@ -1,8 +1,19 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 /**
  * Classe gérant le système de la recherche d'artistes
  */
-var ArtistManager = /** @class */ (function () {
+var ArtistManager = /** @class */ (function (_super) {
+    __extends(ArtistManager, _super);
     /**
      * Récupère les données textuelles de l'app relatives à la partie "artist", stocke une instance d'AlertManager et d'AuthorizationManager entrées en paramètre, initialise les sélecteurs des éléments du dom correspondant au conteneur de la liste des artistes et au champ de recherche des artistes,
      * et écoute les frappes dans le champ de recherche.
@@ -14,8 +25,9 @@ var ArtistManager = /** @class */ (function () {
      * @param {string} albumListTarget
      */
     function ArtistManager(alertManager, authorizationManager, listTarget, inputTarget, albumListTarget) {
-        this.unableToLoadConfigMessage = 'Impossible de charger le fichier de configuration';
-        var that = this;
+        var _this = _super.call(this, authorizationManager) || this;
+        _this.unableToLoadConfigMessage = 'Impossible de charger le fichier de configuration';
+        var that = _this;
         // Récupération des données textuelles de l'app relatives à la partie "artist"
         $.ajax({
             dataType: "json",
@@ -28,15 +40,15 @@ var ArtistManager = /** @class */ (function () {
             }
         });
         // Initialisation des sélecteurs
-        this.alertManager = alertManager;
-        this.authorizationManager = authorizationManager;
-        this.listTarget = listTarget;
-        this.inputTarget = inputTarget;
-        this.searchboxTarget = inputTarget + ' input';
-        this.hidingTriggerTarget = albumListTarget + ', ' + listTarget;
+        _this.alertManager = alertManager;
+        _this.listTarget = listTarget;
+        _this.inputTarget = inputTarget;
+        _this.searchboxTarget = inputTarget + ' input';
+        _this.hidingTriggerTarget = albumListTarget + ', ' + listTarget;
         // Initialisation de l'écoute des évènements
-        this.listenTyping();
-        this.listenToggleEvents();
+        _this.listenTyping();
+        _this.listenToggleEvents();
+        return _this;
     }
     /**
      * Initialisation des des données textuelles de l'app relatives à la partie "artist"
@@ -49,13 +61,18 @@ var ArtistManager = /** @class */ (function () {
     };
     /**
      * Affiche les resultats liés à la chaîne correspondant à la valeur de la barre de recherche
-     * si sa longueur n'est pas nulle.
+     * si sa longueur n'est pas nulle et ignore les retours clavier.
      */
     ArtistManager.prototype.listenTyping = function () {
         var _this = this;
         $(this.searchboxTarget).on('keyup paste', function (e) {
+            // Ignorer les retours clavier
+            if (e.which == 13) {
+                e.preventDefault();
+            }
+            // Afficher les résultats liés à la chaîne entrée
             if ($(_this.searchboxTarget).val().length > 0) {
-                _this.loadItems($(_this.searchboxTarget).val());
+                _this.loadArtists($(_this.searchboxTarget).val());
             }
         });
     };
@@ -63,33 +80,16 @@ var ArtistManager = /** @class */ (function () {
      * Effectue une recherche d'artistes relative à la chaîne entrée en paramètre et affiche le résultat.
      * En cas d'erreur, s'il s'agit d'une erreur d'autorisation, redirige vers la page d'autorisation, sinon affiche un message d'erreur.
      */
-    ArtistManager.prototype.loadItems = function (searchTerm) {
+    ArtistManager.prototype.loadArtists = function (searchTerm) {
         var _this = this;
-        var that = this;
-        $.ajax({
-            url: 'https://api.spotify.com/v1/search',
-            headers: {
-                'Authorization': 'Bearer ' + this.authorizationManager.getToken()
-            },
-            data: {
-                q: searchTerm,
-                type: "artist",
-                offset: 0,
-                limit: 50
-            },
-            success: function (response) {
-                // Affichage du résultat sur la page
-                that.handleLoading(response);
-            },
-            error: function (data) {
-                // S'il s'agit d'une erreur 401, affichage du message expliquant que l'autorisation a expiré et redirection vers la page d'autorisation
-                if (data.status === 401) {
-                    that.authorizationManager.redirectToAuthorization();
-                    return;
-                }
-                // Sinon affichage d'un message d'erreur
-                that.alertManager.displayError(_this.loadingProblemMessage);
-            }
+        this.loadItems({
+            "requestUrl": 'https://api.spotify.com/v1/search',
+            "query": searchTerm,
+            "type": "artist",
+            "offset": 0,
+            "limit": 50,
+            "successCallback": function (data) { return _this.handleLoadingSuccess(data); },
+            "errorCallback": function (error) { return _this.handleLoadingError(error); }
         });
     };
     /**
@@ -99,7 +99,7 @@ var ArtistManager = /** @class */ (function () {
      *
      * @param response
      */
-    ArtistManager.prototype.handleLoading = function (response) {
+    ArtistManager.prototype.handleLoadingSuccess = function (response) {
         var that = this;
         // Vidange la liste des artistes.
         $(this.listTarget).empty();
@@ -122,6 +122,21 @@ var ArtistManager = /** @class */ (function () {
         return "\n            <div class=\"artist col-12\" id=\"" + id + "\">\n                <div class=\"row\">\n                    <div class=\"col-sm-1 col-5 img-container\">\n                        <img src=\"" + imgUrl + "\" alt=\"" + name + "\" />\n                   </div>\n                    <div class=\"col-sm-11 col-7\">\n                        <p class=\"artist-name\">" + name + "</p>\n                    </div>\n                </div>\n                \n            </div>\n        ";
     };
     /**
+     * Si l'erreur en paramètre correspond à un code 401, affiche du message expliquant que l'autorisation a expiré et redirige vers la page d'autorisation.
+     * Affiche un message d'erreur sinon.
+     *
+     * @param {object} error
+     */
+    ArtistManager.prototype.handleLoadingError = function (error) {
+        // S'il s'agit d'une erreur 401, affichage du message expliquant que l'autorisation a expiré et redirection vers la page d'autorisation
+        if (error.status === 401) {
+            this.authorizationManager.redirectToAuthorization();
+            return;
+        }
+        // Sinon affichage d'un message d'erreur
+        this.alertManager.displayError(this.loadingProblemMessage);
+    };
+    /**
      * Affiche la liste des suggestions d'artistes au clic sur la barre de recherche,
      * La cache lorsqu'elle est cliquée ou au clic sur la liste des albums
      *
@@ -136,4 +151,4 @@ var ArtistManager = /** @class */ (function () {
         });
     };
     return ArtistManager;
-}());
+}(APICallManager));

@@ -1,7 +1,7 @@
 /**
  * Classe gérant le système de la recherche d'artistes
  */
-class ArtistManager{
+class ArtistManager extends APICallManager{
 
     protected authorizationManager : AuthorizationManager;
     protected listTarget : string;
@@ -26,6 +26,8 @@ class ArtistManager{
      */
     constructor(alertManager : AlertManager, authorizationManager : AuthorizationManager, listTarget : string, inputTarget : string, albumListTarget : string){
 
+        super(authorizationManager);
+
         const that = this;
 
         // Récupération des données textuelles de l'app relatives à la partie "artist"
@@ -44,7 +46,6 @@ class ArtistManager{
 
         // Initialisation des sélecteurs
         this.alertManager = alertManager;
-        this.authorizationManager = authorizationManager;
         this.listTarget = listTarget;
         this.inputTarget = inputTarget;
         this.searchboxTarget = inputTarget + ' input';
@@ -70,12 +71,17 @@ class ArtistManager{
 
     /**
      * Affiche les resultats liés à la chaîne correspondant à la valeur de la barre de recherche
-     * si sa longueur n'est pas nulle.
+     * si sa longueur n'est pas nulle et ignore les retours clavier.
      */
     protected listenTyping() : void{
         $(this.searchboxTarget).on('keyup paste', (e)=>{
+            // Ignorer les retours clavier
+            if(e.which == 13) {
+                e.preventDefault();
+            }
+            // Afficher les résultats liés à la chaîne entrée
             if($(this.searchboxTarget).val().length > 0){
-                this.loadItems($(this.searchboxTarget).val());
+                this.loadArtists($(this.searchboxTarget).val());
             }
         })
     }
@@ -84,35 +90,16 @@ class ArtistManager{
      * Effectue une recherche d'artistes relative à la chaîne entrée en paramètre et affiche le résultat.
      * En cas d'erreur, s'il s'agit d'une erreur d'autorisation, redirige vers la page d'autorisation, sinon affiche un message d'erreur.
      */
-    protected loadItems(searchTerm : string) : void {
+    protected loadArtists(searchTerm : string) : void {
 
-        const that = this;
-
-        $.ajax({
-            url: 'https://api.spotify.com/v1/search',
-            headers: {
-                'Authorization': 'Bearer ' + this.authorizationManager.getToken()
-            },
-            data: {
-                q: searchTerm,
-                type: "artist",
-                offset: 0,
-                limit: 50
-            },
-            success: (response : object) : void => {
-                // Affichage du résultat sur la page
-                that.handleLoading(response);
-            },
-            error: (data) : void  =>{
-                // S'il s'agit d'une erreur 401, affichage du message expliquant que l'autorisation a expiré et redirection vers la page d'autorisation
-                if(data.status === 401){
-                    that.authorizationManager.redirectToAuthorization();
-                    return;
-                }
-                // Sinon affichage d'un message d'erreur
-                 that.alertManager.displayError(this.loadingProblemMessage);
-            }
-
+        this.loadItems({
+            "requestUrl" : 'https://api.spotify.com/v1/search',
+            "query" : searchTerm,
+            "type" : "artist",
+            "offset" : 0,
+            "limit" : 50,
+            "successCallback" : (data) => this.handleLoadingSuccess(data),
+            "errorCallback" : (error) => this.handleLoadingError(error)
         });
     }
 
@@ -123,7 +110,7 @@ class ArtistManager{
      *
      * @param response
      */
-    protected handleLoading(response : object) : void {
+    protected handleLoadingSuccess(response : object) : void {
         const that = this;
 
         // Vidange la liste des artistes.
@@ -162,6 +149,22 @@ class ArtistManager{
             </div>
         `;
 
+    }
+
+    /**
+     * Si l'erreur en paramètre correspond à un code 401, affiche du message expliquant que l'autorisation a expiré et redirige vers la page d'autorisation.
+     * Affiche un message d'erreur sinon.
+     *
+     * @param {object} error
+     */
+    handleLoadingError(error : object) : void {
+        // S'il s'agit d'une erreur 401, affichage du message expliquant que l'autorisation a expiré et redirection vers la page d'autorisation
+        if(error.status === 401){
+            this.authorizationManager.redirectToAuthorization();
+            return;
+        }
+        // Sinon affichage d'un message d'erreur
+        this.alertManager.displayError(this.loadingProblemMessage);
     }
 
     /**
