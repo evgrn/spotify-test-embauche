@@ -18,7 +18,6 @@ class AlbumManager extends APICallManager{
     protected noMoreResultsText: string;
     protected loadingProblemMessage : string;
     protected defaultImgUrl : string;
-    protected unableToLoadConfigMessage : string = 'Impossible de charger le fichier de configuration';
 
 
     /**
@@ -26,59 +25,45 @@ class AlbumManager extends APICallManager{
      * à celle des albums et à la barre permettant d'afficher les albums suivants.
      * Écoute le clic sur un bloc "artiste" et sur la barre de pagination.
      *
-     * @param alertManager {AlertManager}
-     * @param {AuthorizationManager} authorizationManager
-     * @param {string} artistListTarget
-     * @param {string} listTarget
-     * @param {string} nextSliceBar
-     * @param {string} ajaxLoaderTarget
+     * @parameters {{alertManager: AlertManager; authorizationManager: AuthorizationManager; artistListTarget: string; listTarget: string; nextSliceBar: string; ajaxLoaderTarget: string; loadingProblemMessage: string; showMoreResultsText: string; noMoreResultsText: string; noResultMessage: string}} parameters
      */
-    constructor(alertManager : AlertManager, authorizationManager : AuthorizationManager, artistListTarget : string, listTarget : string, nextSliceBar : string, ajaxLoaderTarget : string) {
+    constructor(parameters :
+                    {
+                        alertManager : AlertManager,
+                        authorizationManager : AuthorizationManager,
+                        artistListTarget : string,
+                        listTarget : string,
+                        nextSliceBar : string,
+                        ajaxLoaderTarget : string,
+                        loadingProblemMessage : string,
+                        showMoreResultsText : string,
+                        noMoreResultsText : string,
+                        noResultMessage : string
+                    }) {
 
-        super(authorizationManager);
-
-        const that = this;
-
-        // Récupération des données textuelles de l'app relatives à la partie "albums"
-        $.ajax({
-            dataType: "json",
-            url: "config/config.json",
-
-            success: function(data){
-                that.setupStrings(data);
-            },
-
-            error: function(){
-                that.alertManager.displayError(that.unableToLoadConfigMessage);
-            }
-        });
+        // Appel au constructeur parent
+        super(parameters.authorizationManager);
 
         // Initialisation des sélecteurs
-        this.alertManager = alertManager;
-        this.authorizationManager = authorizationManager;
-        this.artistListTarget = artistListTarget;
-        this.listTarget = listTarget;
-        this.nextSliceBar = nextSliceBar;
-        this.nextSliceBarText = nextSliceBar + ' p';
-        this.ajaxLoaderTarget = ajaxLoaderTarget;
+        this.alertManager = parameters.alertManager;
+        this.authorizationManager = parameters.authorizationManager;
+        this.artistListTarget = parameters.artistListTarget;
+        this.listTarget = parameters.listTarget;
+        this.nextSliceBar = parameters.nextSliceBar;
+        this.nextSliceBarText = parameters.nextSliceBar + ' p';
+        this.ajaxLoaderTarget = parameters.ajaxLoaderTarget;
+        this.loadingProblemMessage = parameters.loadingProblemMessage;
+        this.showMoreResultsText = parameters.showMoreResultsText;
+        this.noMoreResultsText = parameters.noMoreResultsText;
+        this.noResultMessage = parameters.noResultMessage;
+        this.defaultImgUrl = parameters.defaultImgUrl;
 
         // Initialisation de l'écoute des évènements
         this.listenTrigger();
         this.listenNext();
     }
 
-    /**
-     * Initialisation des des données textuelles de l'app relatives à la partie "albums"
-     *
-     * @param {object} data
-     */
-    protected setupStrings(data : object){
-        this.loadingProblemMessage = data.alert_messages.unable_to_load.albums;
-        this.showMoreResultsText = data.app_texts.albums.show_more_results;
-        this.noMoreResultsText = data.app_texts.albums.no_more_results;
-        this.noResultMessage = data.app_texts.albums.no_album_found;
-        this.defaultImgUrl = data.default_image_url.album;
-    }
+
 
     /**
      * Génère un élément "album" à partir des paramètres entrés et d'un template.
@@ -135,7 +120,7 @@ class AlbumManager extends APICallManager{
      *
      * @param response
      */
-    protected handleLoadingSuccess(response : object) : void {
+    protected handleLoadingSuccess(response : any) : void {
 
         // Si la requête ne retourne aucun album
         if($(response.items).length < 1){
@@ -148,7 +133,7 @@ class AlbumManager extends APICallManager{
         // Génération les éléments "album"
         const that = this;
 
-        $.map(response.items, (album : object) =>{
+        $.map(response.items, (album : any) =>{
             // Remplacement de l'url de l'url de l'image par celle par défaut si inexistante
             let imgUrl = $(album.images).length > 0 ? album.images[0].url : that.defaultImgUrl;
 
@@ -188,9 +173,9 @@ class AlbumManager extends APICallManager{
      * Cache le loader AJAX, si l'erreur en paramètre correspond à un code 401, affiche du message expliquant que l'autorisation a expiré et redirige vers la page d'autorisation.
      * Affiche un message d'erreur sinon.
      *
-     * @param {object} error
+     * @param error
      */
-    handleLoadingError(error : object) : void {
+    handleLoadingError(error : any) : void {
         // Disparition du loader AJAX
         this.ajaxLoaderVisibility(false);
 

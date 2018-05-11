@@ -19,55 +19,32 @@ var AlbumManager = /** @class */ (function (_super) {
      * à celle des albums et à la barre permettant d'afficher les albums suivants.
      * Écoute le clic sur un bloc "artiste" et sur la barre de pagination.
      *
-     * @param alertManager {AlertManager}
-     * @param {AuthorizationManager} authorizationManager
-     * @param {string} artistListTarget
-     * @param {string} listTarget
-     * @param {string} nextSliceBar
-     * @param {string} ajaxLoaderTarget
+     * @parameters {{alertManager: AlertManager; authorizationManager: AuthorizationManager; artistListTarget: string; listTarget: string; nextSliceBar: string; ajaxLoaderTarget: string; loadingProblemMessage: string; showMoreResultsText: string; noMoreResultsText: string; noResultMessage: string}} parameters
      */
-    function AlbumManager(alertManager, authorizationManager, artistListTarget, listTarget, nextSliceBar, ajaxLoaderTarget) {
-        var _this = _super.call(this, authorizationManager) || this;
+    function AlbumManager(parameters) {
+        var _this = 
+        // Appel au constructeur parent
+        _super.call(this, parameters.authorizationManager) || this;
         _this.noMoreAlbums = false;
         _this.slice = 0;
-        _this.unableToLoadConfigMessage = 'Impossible de charger le fichier de configuration';
-        var that = _this;
-        // Récupération des données textuelles de l'app relatives à la partie "albums"
-        $.ajax({
-            dataType: "json",
-            url: "config/config.json",
-            success: function (data) {
-                that.setupStrings(data);
-            },
-            error: function () {
-                that.alertManager.displayError(that.unableToLoadConfigMessage);
-            }
-        });
         // Initialisation des sélecteurs
-        _this.alertManager = alertManager;
-        _this.authorizationManager = authorizationManager;
-        _this.artistListTarget = artistListTarget;
-        _this.listTarget = listTarget;
-        _this.nextSliceBar = nextSliceBar;
-        _this.nextSliceBarText = nextSliceBar + ' p';
-        _this.ajaxLoaderTarget = ajaxLoaderTarget;
+        _this.alertManager = parameters.alertManager;
+        _this.authorizationManager = parameters.authorizationManager;
+        _this.artistListTarget = parameters.artistListTarget;
+        _this.listTarget = parameters.listTarget;
+        _this.nextSliceBar = parameters.nextSliceBar;
+        _this.nextSliceBarText = parameters.nextSliceBar + ' p';
+        _this.ajaxLoaderTarget = parameters.ajaxLoaderTarget;
+        _this.loadingProblemMessage = parameters.loadingProblemMessage;
+        _this.showMoreResultsText = parameters.showMoreResultsText;
+        _this.noMoreResultsText = parameters.noMoreResultsText;
+        _this.noResultMessage = parameters.noResultMessage;
+        _this.defaultImgUrl = parameters.defaultImgUrl;
         // Initialisation de l'écoute des évènements
         _this.listenTrigger();
         _this.listenNext();
         return _this;
     }
-    /**
-     * Initialisation des des données textuelles de l'app relatives à la partie "albums"
-     *
-     * @param {object} data
-     */
-    AlbumManager.prototype.setupStrings = function (data) {
-        this.loadingProblemMessage = data.alert_messages.unable_to_load.albums;
-        this.showMoreResultsText = data.app_texts.albums.show_more_results;
-        this.noMoreResultsText = data.app_texts.albums.no_more_results;
-        this.noResultMessage = data.app_texts.albums.no_album_found;
-        this.defaultImgUrl = data.default_image_url.album;
-    };
     /**
      * Génère un élément "album" à partir des paramètres entrés et d'un template.
      *
@@ -153,7 +130,7 @@ var AlbumManager = /** @class */ (function (_super) {
      * Cache le loader AJAX, si l'erreur en paramètre correspond à un code 401, affiche du message expliquant que l'autorisation a expiré et redirige vers la page d'autorisation.
      * Affiche un message d'erreur sinon.
      *
-     * @param {object} error
+     * @param error
      */
     AlbumManager.prototype.handleLoadingError = function (error) {
         // Disparition du loader AJAX

@@ -6,59 +6,33 @@ class AuthorizationManager{
     protected alertManager : AlertManager;
     protected authorizationPageUrl : string;
     protected authorizationRedirectMessage : string;
-    protected unableToLoadConfigMessage : string = 'Impossible de charger le fichier de configuration';
+    protected unableToLoadConfigMessage : string = 'Impossible de charger le fichier de configuration'; // TODO: dégager partout
 
 
     /**
-     * Récupère les données textuelles de l'app relatives à la partie "authorization", initialise le sélecteur de l'overlay global de la page, sauvegarde le Token dans le SessionStorage.
+     * Récupère les données textuelles de l'app relatives à la partie "authorization",  sauvegarde le Token dans le SessionStorage.
      * Si le token n'est pas valide, redirige vers la page d'autorisation.
      *
      * @param {AlertManager} alertManager
-     * @param {boolean} prod
+     * @param authorizationPageUrl
+     * @param authorizationRedirectMessage
      */
-    constructor(alertManager : AlertManager, prod : boolean = false){
+    constructor(alertManager : AlertManager, authorizationPageUrl : string, authorizationRedirectMessage : string){
 
         this.alertManager = alertManager;
+        this.authorizationPageUrl = authorizationPageUrl;
+        this.authorizationRedirectMessage = authorizationRedirectMessage;
 
-        const that = this;
-
-        $.ajax({
-            dataType: "json",
-            url: "config/config.json",
-
-            success: function(data){
-                that.init(data, prod);
-            },
-
-            error: function(){
-                that.alertManager.displayError(that.unableToLoadConfigMessage);
-            }
-        });
-
-    }
-
-    /**
-     * Récupère les données textuelles de l'app relatives à la partie "authorization" et
-     * sauvegarde le Token dans le SessionStorage.
-     * Si le token n'est pas valide, redirige vers la page d'autorisation.
-     *
-     * @param {string} data
-     * @param {boolean} prod
-     */
-    protected init(data : string, prod : boolean) : void {
-
-        // Définition de la page de redirection en fonction de la situation ( dev / prod)
-        this.authorizationPageUrl = prod === true ? data.authorization_url.prod : data.authorization_url.dev;
-
-        this.authorizationRedirectMessage = data.alert_messages.authorization_redirect;
         this.storeToken();
         if(!this.tokenIsValid()){
             this.getAuthorization();
         }
+
     }
 
+
     /**
-     * Si la valeur stockée en SessionStorage correspond à null ou "undefined', returne false,
+     * Si la valeur stockée en SessionStorage correspond à null ou "undefined', retourne false,
      * sinon, retourne true.
      *
      * @returns {boolean}

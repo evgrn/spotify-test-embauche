@@ -18,47 +18,23 @@ var ArtistManager = /** @class */ (function (_super) {
      * Récupère les données textuelles de l'app relatives à la partie "artist", stocke une instance d'AlertManager et d'AuthorizationManager entrées en paramètre, initialise les sélecteurs des éléments du dom correspondant au conteneur de la liste des artistes et au champ de recherche des artistes,
      * et écoute les frappes dans le champ de recherche.
      *
-     * @param {AlertManager} alertManager
-     * @param {AuthorizationManager} listTarget
-     * @param {string} inputTarget
-     * @param {string} authorizationManager
-     * @param {string} albumListTarget
+     * @parameters {{alertManager: AlertManager; authorizationManager: AuthorizationManager; listTarget: string; inputTarget: string; albumListTarget: string; loadingProblemMessage: string; defaultImgUrl: string}} parameters
      */
-    function ArtistManager(alertManager, authorizationManager, listTarget, inputTarget, albumListTarget) {
-        var _this = _super.call(this, authorizationManager) || this;
-        _this.unableToLoadConfigMessage = 'Impossible de charger le fichier de configuration';
-        var that = _this;
-        // Récupération des données textuelles de l'app relatives à la partie "artist"
-        $.ajax({
-            dataType: "json",
-            url: "config/config.json",
-            success: function (data) {
-                that.setupStrings(data);
-            },
-            error: function () {
-                that.alertManager.displayError(that.unableToLoadConfigMessage);
-            }
-        });
+    function ArtistManager(parameters) {
+        var _this = _super.call(this, parameters.authorizationManager) || this;
         // Initialisation des sélecteurs
-        _this.alertManager = alertManager;
-        _this.listTarget = listTarget;
-        _this.inputTarget = inputTarget;
-        _this.searchboxTarget = inputTarget + ' input';
-        _this.hidingTriggerTarget = albumListTarget + ', ' + listTarget;
+        _this.alertManager = parameters.alertManager;
+        _this.listTarget = parameters.listTarget;
+        _this.inputTarget = parameters.inputTarget;
+        _this.searchboxTarget = parameters.inputTarget + ' input';
+        _this.hidingTriggerTarget = parameters.albumListTarget + ', ' + parameters.listTarget;
+        _this.loadingProblemMessage = parameters.loadingProblemMessage;
+        _this.defaultImgUrl = parameters.defaultImgUrl;
         // Initialisation de l'écoute des évènements
         _this.listenTyping();
         _this.listenToggleEvents();
         return _this;
     }
-    /**
-     * Initialisation des des données textuelles de l'app relatives à la partie "artist"
-     *
-     * @param {object} data
-     */
-    ArtistManager.prototype.setupStrings = function (data) {
-        this.loadingProblemMessage = data.alert_messages.unable_to_load.artists;
-        this.defaultImgUrl = data.default_image_url.artist;
-    };
     /**
      * Affiche les resultats liés à la chaîne correspondant à la valeur de la barre de recherche
      * si sa longueur n'est pas nulle et ignore les retours clavier.

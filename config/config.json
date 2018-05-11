@@ -1,25 +1,47 @@
 {
-  "authorization_url" : {
-    "dev" : "https://accounts.spotify.com/authorize?client_id=366523be025a4315bf401d753f048635&response_type=token&redirect_uri=http://localhost:8000/index.html",
-    "prod" : "https://accounts.spotify.com/authorize?client_id=366523be025a4315bf401d753f048635&response_type=token&redirect_uri=http://test-spotify.camille-maillet.fr"
-  },
-  "default_image_url" : {
-    "artist" : "img/artist-default.jpg",
-    "album" : "img/album-default.jpg"
-  },
-  "alert_messages" : {
-    "authorization_redirect" : "La session a expiré, <br />vous allez être redirigé vers la page d'autorisation de l'application",
-    "unable_to_load" : {
-      "artists" : "Impossible de charger les artistes correspondants, veuillez recharger la page.",
-      "albums" : "Impossible de charger les albums correspondants, veuillez recharger la page."
+  "authorization" : {
+    "redirection_urls" : {
+      "dev" : "https://accounts.spotify.com/authorize?client_id=366523be025a4315bf401d753f048635&response_type=token&redirect_uri=http://localhost:8000/index.html",
+      "prod" : "https://accounts.spotify.com/authorize?client_id=366523be025a4315bf401d753f048635&response_type=token&redirect_uri=http://test-spotify.camille-maillet.fr"
+    },
+    "alert_messages" : {
+      "redirect" : "La session a expiré, <br />vous allez être redirigé vers la page d'autorisation de l'application"
     }
   },
-  "app_texts" : {
-    "albums" : {
+  "alerts" : {
+    "selectors" : {
+      "global_overlay" : "#global-overlay",
+      "message" : "#alert-message"
+    }
+  },
+  "artist" : {
+    "selectors" : {
+      "list" : "#artist-list",
+      "input" : "#searchform"
+    },
+    "defaults" : {
+      "img_url" : "img/artist-default.jpg"
+    },
+    "alert_messages" : {
+      "unable_to_load" : "Impossible de charger les artistes correspondants, veuillez recharger la page."
+    }
+  },
+  "albums" : {
+    "selectors" : {
+      "list" : "#album-list",
+      "next_slice_bar" : "#next-slice-container",
+      "ajax_loader" : "#ajax-loader"
+    },
+    "defaults" : {
+      "img_url" : "img/album-default.jpg"
+    },
+    "texts" : {
       "show_more_results" : "Plus d'albums",
       "no_more_results" : "Fin des résultats",
       "no_album_found" : "<p id=\"no-album\"> Aucun album disponible pour cet artiste</p>"
+    },
+    "alert_messages" : {
+      "unable_to_load" : "Impossible de charger les albums correspondants, veuillez recharger la page."
     }
-
   }
 }

@@ -11,63 +11,32 @@ class ArtistManager extends APICallManager{
     protected alertManager : AlertManager;
     protected loadingProblemMessage : string;
     protected hidingTriggerTarget : string;
-    protected unableToLoadConfigMessage : string = 'Impossible de charger le fichier de configuration';
 
 
     /**
      * Récupère les données textuelles de l'app relatives à la partie "artist", stocke une instance d'AlertManager et d'AuthorizationManager entrées en paramètre, initialise les sélecteurs des éléments du dom correspondant au conteneur de la liste des artistes et au champ de recherche des artistes,
      * et écoute les frappes dans le champ de recherche.
      *
-     * @param {AlertManager} alertManager
-     * @param {AuthorizationManager} listTarget
-     * @param {string} inputTarget
-     * @param {string} authorizationManager
-     * @param {string} albumListTarget
+     * @parameters {{alertManager: AlertManager; authorizationManager: AuthorizationManager; listTarget: string; inputTarget: string; albumListTarget: string; loadingProblemMessage: string; defaultImgUrl: string}} parameters
      */
-    constructor(alertManager : AlertManager, authorizationManager : AuthorizationManager, listTarget : string, inputTarget : string, albumListTarget : string){
+    constructor(parameters : {alertManager : AlertManager, authorizationManager : AuthorizationManager, listTarget : string, inputTarget : string, albumListTarget : string, loadingProblemMessage : string, defaultImgUrl : string}){
 
-        super(authorizationManager);
-
-        const that = this;
-
-        // Récupération des données textuelles de l'app relatives à la partie "artist"
-        $.ajax({
-            dataType: "json",
-            url: "config/config.json",
-
-            success: function(data){
-                that.setupStrings(data);
-            },
-
-            error: function(){
-                that.alertManager.displayError(that.unableToLoadConfigMessage);
-            }
-        });
+        super(parameters.authorizationManager);
 
         // Initialisation des sélecteurs
-        this.alertManager = alertManager;
-        this.listTarget = listTarget;
-        this.inputTarget = inputTarget;
-        this.searchboxTarget = inputTarget + ' input';
-        this.hidingTriggerTarget = albumListTarget + ', ' + listTarget;
+        this.alertManager = parameters.alertManager;
+        this.listTarget = parameters.listTarget;
+        this.inputTarget = parameters.inputTarget;
+        this.searchboxTarget = parameters.inputTarget + ' input';
+        this.hidingTriggerTarget = parameters.albumListTarget + ', ' + parameters.listTarget;
+        this.loadingProblemMessage = parameters.loadingProblemMessage;
+        this.defaultImgUrl = parameters.defaultImgUrl;
 
         // Initialisation de l'écoute des évènements
         this.listenTyping();
         this.listenToggleEvents();
 
     }
-
-    /**
-     * Initialisation des des données textuelles de l'app relatives à la partie "artist"
-     *
-     * @param {object} data
-     */
-    protected setupStrings(data : object){
-        this.loadingProblemMessage = data.alert_messages.unable_to_load.artists;
-        this.defaultImgUrl = data.default_image_url.artist;
-    }
-
-
 
     /**
      * Affiche les resultats liés à la chaîne correspondant à la valeur de la barre de recherche
