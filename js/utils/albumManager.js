@@ -75,6 +75,8 @@ var AlbumManager = /** @class */ (function () {
      */
     AlbumManager.prototype.loadItems = function () {
         var _this = this;
+        // Apparition du loader AJAX
+        this.ajaxLoaderVisibility(true);
         var that = this;
         $.ajax({
             url: "https://api.spotify.com/v1/artists/" + this.artist + "/albums",
@@ -90,8 +92,12 @@ var AlbumManager = /** @class */ (function () {
             success: function (response) {
                 // Affichage du résultat sur la page
                 _this.handleLoading(response);
+                // Disparition du loader AJAX
+                that.ajaxLoaderVisibility(false);
             },
             error: function (data) {
+                // Disparition du loader AJAX
+                that.ajaxLoaderVisibility(false);
                 // S'il s'agit d'une erreur 401, affichage du message expliquant que l'autorisation a expiré et redirection vers la page d'autorisation
                 if (data.status === 401) {
                     that.authorizationManager.redirectToAuthorization();
@@ -116,15 +122,13 @@ var AlbumManager = /** @class */ (function () {
             this.notFound();
             return;
         }
-        // Génération les éléments "album" et affichage du loader pendant le chargement
-        $(this.ajaxLoaderTarget).fadeIn(200).css('display', 'flex');
+        // Génération les éléments "album"
         var that = this;
         $.map(response.items, function (album) {
             // Remplacement de l'url de l'url de l'image par celle par défaut si inexistante
             var imgUrl = $(album.images).length > 0 ? album.images[0].url : that.defaultImgUrl;
             $('#album-list').append(_this.template(imgUrl, album.name, album.external_urls.spotify));
         });
-        $(this.ajaxLoaderTarget).fadeOut(200);
         // scroll jusqu'en bas de la page
         $('body, html').animate({ scrollTop: $('body').height() }, 500);
         // Incrémentation du compteur de paginations
@@ -168,6 +172,18 @@ var AlbumManager = /** @class */ (function () {
             that.showNextSliceBar();
             that.loadItems();
         });
+    };
+    /**
+     * Si le paramètre vaut true, affiche le loader, sinon le cache.
+     *
+     * @param {boolean} visible
+     */
+    AlbumManager.prototype.ajaxLoaderVisibility = function (visible) {
+        if (visible === true) {
+            $(this.ajaxLoaderTarget).fadeIn(200).css('display', 'flex');
+            return;
+        }
+        $(this.ajaxLoaderTarget).fadeOut(200);
     };
     /**
      * Affiche la barre de pagination et définit son texte par "Plus d'albums".

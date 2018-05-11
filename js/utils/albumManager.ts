@@ -107,6 +107,9 @@ class AlbumManager{
      *
      */
     protected loadItems() : void {
+        // Apparition du loader AJAX
+        this.ajaxLoaderVisibility(true);
+
         const that = this;
         $.ajax({
             url: `https://api.spotify.com/v1/artists/${this.artist}/albums`,
@@ -122,9 +125,14 @@ class AlbumManager{
             success: (response : object)=> {
                 // Affichage du résultat sur la page
                this.handleLoading(response);
+                // Disparition du loader AJAX
+                that.ajaxLoaderVisibility(false);
 
             },
             error: function(data){
+                // Disparition du loader AJAX
+                that.ajaxLoaderVisibility(false);
+
                 // S'il s'agit d'une erreur 401, affichage du message expliquant que l'autorisation a expiré et redirection vers la page d'autorisation
                 if(data.status === 401){
                     that.authorizationManager.redirectToAuthorization();
@@ -152,8 +160,8 @@ class AlbumManager{
             return;
         }
 
-        // Génération les éléments "album" et affichage du loader pendant le chargement
-        $(this.ajaxLoaderTarget).fadeIn(200).css('display', 'flex');
+        // Génération les éléments "album"
+
 
         const that = this;
 
@@ -164,7 +172,6 @@ class AlbumManager{
             $('#album-list').append(this.template(imgUrl, album.name, album.external_urls.spotify));
         });
 
-        $(this.ajaxLoaderTarget).fadeOut(200);
 
         // scroll jusqu'en bas de la page
         $('body, html').animate({scrollTop: $('body').height()}, 500);
@@ -213,6 +220,19 @@ class AlbumManager{
             that.showNextSliceBar();
             that.loadItems();
         });
+    }
+
+    /**
+     * Si le paramètre vaut true, affiche le loader, sinon le cache.
+     *
+     * @param {boolean} visible
+     */
+    protected ajaxLoaderVisibility(visible : boolean) : void {
+        if(visible === true){
+            $(this.ajaxLoaderTarget).fadeIn(200).css('display', 'flex');
+            return;
+        }
+        $(this.ajaxLoaderTarget).fadeOut(200);
     }
 
     /**
